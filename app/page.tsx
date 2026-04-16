@@ -1,28 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import { FEATURES, type FeatureConfig } from "@/config/features";
 
-type Feature = {
-  href: string;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
+// 아이콘은 JSX라 config에 넣기 어려우므로 href 기준으로 여기서 매핑
+const ICONS: Record<string, React.ReactNode> = {
+  "/metronome": (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 24V10M14 10L9 20M14 10l5 10" />
+      <path d="M8 24h16" />
+      <circle cx="14" cy="7" r="2.5" />
+    </svg>
+  ),
+  "/tuner": (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="14" cy="16" r="7" />
+      <path d="M14 9V5" />
+      <path d="M10 5h8" />
+      <path d="M14 16l-3-4" />
+    </svg>
+  ),
 };
-
-const features: Feature[] = [
-  {
-    href: "/metronome",
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 24V10M14 10L9 20M14 10l5 10" />
-        <path d="M8 24h16" />
-        <circle cx="14" cy="7" r="2.5" />
-      </svg>
-    ),
-    title: "Metronome",
-    description: "BPM · 박자 · Tap Tempo",
-  },
-];
 
 export default function HomePage() {
   return (
@@ -37,18 +35,29 @@ export default function HomePage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-2xl">
-        {features.map((feature) => (
-          <FeatureCard key={feature.href} {...feature} />
+        {FEATURES.map((feature) => (
+          <FeatureCard
+            key={feature.href}
+            feature={feature}
+            icon={ICONS[feature.href]}
+          />
         ))}
       </div>
+
+      {/* 키보드 단축키 힌트 */}
+      {FEATURES.length > 1 && (
+        <p className="mt-12 text-xs text-neutral-700">
+          기능 페이지에서 <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-500 font-mono">Ctrl</kbd> + <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-500 font-mono">←</kbd><kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-500 font-mono">→</kbd> 로 기능 간 이동
+        </p>
+      )}
     </main>
   );
 }
 
-function FeatureCard({ href, icon, title, description }: Feature) {
+function FeatureCard({ feature, icon }: { feature: FeatureConfig; icon: React.ReactNode }) {
   return (
     <Link
-      href={href}
+      href={feature.href}
       className="
         group relative flex flex-col gap-4 p-6 rounded-2xl
         bg-neutral-900 border border-neutral-800
@@ -60,8 +69,8 @@ function FeatureCard({ href, icon, title, description }: Feature) {
         {icon}
       </div>
       <div>
-        <h2 className="text-white font-medium text-base mb-1">{title}</h2>
-        <p className="text-neutral-500 text-sm">{description}</p>
+        <h2 className="text-white font-medium text-base mb-1">{feature.title}</h2>
+        <p className="text-neutral-500 text-sm">{feature.description}</p>
       </div>
       <div className="absolute right-5 top-1/2 -translate-y-1/2 text-neutral-700 group-hover:text-amber-400 group-hover:translate-x-1 transition-all duration-200">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
