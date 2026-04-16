@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMetronome } from "@/hooks/useMetronome";
+import { useFeatureNavigation } from "@/hooks/useFeatureNavigation";
 import { BpmControl } from "@/components/BpmControl";
 import { TimeSignatureSelector } from "@/components/TimeSignatureSelector";
 import { BeatIndicator } from "@/components/BeatIndicator";
@@ -18,6 +19,8 @@ export default function MetronomePage() {
     changeTimeSignature,
     tap,
   } = useMetronome();
+
+  useFeatureNavigation("/metronome");
 
   return (
     <main className="min-h-screen bg-neutral-950 flex flex-col">
