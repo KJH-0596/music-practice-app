@@ -99,17 +99,22 @@ export function useMetronome() {
     }, 2000);
   }, [changeBpm]);
 
-  // 스페이스바 단축키
+  // 키보드 단축키
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Space: 재생/정지 (body에 포커스가 있을 때만)
       if (e.code === "Space" && e.target === document.body) {
         e.preventDefault();
         toggle();
       }
+      // Tab: Tap Tempo (preventDefault는 GlobalKeyboardHandler에서 처리)
+      if (e.code === "Tab") {
+        tap();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggle]);
+  }, [toggle, tap]);
 
   // 언마운트 시 정리
   useEffect(() => {

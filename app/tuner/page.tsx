@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useTuner } from "@/hooks/useTuner";
 import { useFeatureNavigation } from "@/hooks/useFeatureNavigation";
@@ -8,6 +9,12 @@ import { StrobeTuner } from "@/components/StrobeTuner";
 export default function TunerPage() {
   const { state, pitch, errorMessage, start, stop } = useTuner();
   useFeatureNavigation("/tuner");
+
+  // 페이지 진입 = 튜닝 의사 → 자동 시작
+  useEffect(() => {
+    start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const isListening = state === "listening";
 
@@ -53,7 +60,7 @@ export default function TunerPage() {
                 : "bg-white hover:bg-neutral-200 shadow-lg shadow-white/10"
               }
             `}
-            aria-label={isListening ? "정지" : "튜너 시작"}
+            aria-label={isListening ? "정지" : "다시 시작"}
           >
             {isListening ? (
               /* 정지 아이콘 */
@@ -72,12 +79,18 @@ export default function TunerPage() {
             )}
           </button>
 
-          {/* 오인페 안내 */}
-          {!isListening && !errorMessage && (
+          {/* 안내 문구 */}
+          {isListening ? (
             <p className="text-[11px] text-neutral-700 text-center leading-relaxed">
               오디오 인터페이스 입력을 사용합니다.<br />
               기타/베이스 소리를 직접 모니터링하면서 튜닝하세요.
             </p>
+          ) : (
+            !errorMessage && (
+              <p className="text-[11px] text-neutral-700 text-center leading-relaxed">
+                버튼을 눌러 다시 시작하세요.
+              </p>
+            )
           )}
 
         </div>
