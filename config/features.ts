@@ -23,4 +23,9 @@ export const FEATURES: FeatureConfig[] = [
     title: "Tuner",
     description: "크로매틱 튜너 · 스트로보",
   },
+  {
+    href: "/scales",
+    title: "Scale Guide",
+    description: "스케일 · 모드 · 지판 시각화",
+  },
 ];

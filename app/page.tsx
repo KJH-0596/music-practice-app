@@ -20,6 +20,19 @@ const ICONS: Record<string, React.ReactNode> = {
       <path d="M14 16l-3-4" />
     </svg>
   ),
+  "/scales": (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="8" width="22" height="12" rx="2" />
+      <line x1="3" y1="14" x2="25" y2="14" />
+      <line x1="9" y1="8" x2="9" y2="20" />
+      <line x1="14" y1="8" x2="14" y2="20" />
+      <line x1="19" y1="8" x2="19" y2="20" />
+      <circle cx="6.5" cy="11" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="11.5" cy="17" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="16.5" cy="11" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="21.5" cy="17" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  ),
 };
 
 export default function HomePage() {
