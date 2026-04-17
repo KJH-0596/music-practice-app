@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 스트로보 튜너 세그먼트 이동 애니메이션 */
+@keyframes strobe-scroll {
+  from { background-position-x: 0px; }
+  to   { background-position-x: 12px; } /* 세그먼트 1주기(4px + 8px gap) */
+}
