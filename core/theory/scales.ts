@@ -2,7 +2,7 @@
  * 스케일/모드 데이터 및 음 계산
  */
 
-export type ScaleCategory = "pentatonic" | "diatonic" | "mode";
+export type ScaleCategory = "pentatonic" | "blues" | "diatonic" | "mode" | "altered";
 
 export type ScaleConfig = {
   id: string;
@@ -28,6 +28,21 @@ export const SCALES: ScaleConfig[] = [
     intervals: [0, 3, 5, 7, 10],
     category: "pentatonic",
   },
+  // ── 블루스 ─────────────────────────────────
+  {
+    id: "minor_blues",
+    name: "Minor Blues",
+    koreanName: "마이너 블루스",
+    intervals: [0, 3, 5, 6, 7, 10],
+    category: "blues",
+  },
+  {
+    id: "major_blues",
+    name: "Major Blues",
+    koreanName: "메이저 블루스",
+    intervals: [0, 2, 3, 4, 7, 9],
+    category: "blues",
+  },
   // ── 다이어토닉 ──────────────────────────────
   {
     id: "major",
@@ -42,6 +57,21 @@ export const SCALES: ScaleConfig[] = [
     koreanName: "내추럴 마이너",
     intervals: [0, 2, 3, 5, 7, 8, 10],
     category: "diatonic",
+  },
+  // ── 변형 마이너 ─────────────────────────────
+  {
+    id: "harmonic_minor",
+    name: "Harmonic Minor",
+    koreanName: "하모닉 마이너",
+    intervals: [0, 2, 3, 5, 7, 8, 11],
+    category: "altered",
+  },
+  {
+    id: "melodic_minor",
+    name: "Melodic Minor",
+    koreanName: "멜로딕 마이너",
+    intervals: [0, 2, 3, 5, 7, 9, 11],
+    category: "altered",
   },
   // ── 모드 ────────────────────────────────────
   {
@@ -84,8 +114,10 @@ export const SCALES: ScaleConfig[] = [
 /** 카테고리 레이블 */
 export const SCALE_CATEGORY_LABEL: Record<ScaleCategory, string> = {
   pentatonic: "Pentatonic",
-  diatonic: "Diatonic",
-  mode: "Mode",
+  blues:      "Blues",
+  diatonic:   "Diatonic",
+  altered:    "Altered Minor",
+  mode:       "Mode",
 };
 
 /**

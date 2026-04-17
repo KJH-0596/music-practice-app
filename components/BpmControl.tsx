@@ -18,7 +18,7 @@ export function BpmControl({ bpm, onChange }: BpmControlProps) {
       const delta = e.deltaY < 0 ? step : -step;
       onChange(bpm + delta);
     },
-    [bpm, onChange]
+    [bpm, onChange],
   );
 
   return (
