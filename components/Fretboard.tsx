@@ -6,6 +6,22 @@ import { SINGLE_MARKERS, DOUBLE_MARKERS } from "@/core/theory/constants";
 
 // ── SVG 레이아웃 상수 ─────────────────────────────────────
 const SVG_WIDTH = 920;
+
+// 반음 → 텐션 표기 (실용음악 표준)
+const TENSION_LABELS: Record<number, string> = {
+  0:  "1",
+  1:  "b9",
+  2:  "9",
+  3:  "#9",
+  4:  "3",
+  5:  "11",
+  6:  "#11",
+  7:  "5",
+  8:  "b13",
+  9:  "13",
+  10: "b7",
+  11: "7",
+};
 const TOP_PAD = 22;
 const BOTTOM_PAD = 22;
 const LEFT_PAD = 18;     // 개방현 영역
@@ -20,6 +36,7 @@ interface FretboardProps {
   stringMidis: number[];  // 현 배열 (저음→고음)
   fretCount?: number;
   showDegrees?: boolean;  // true: 도수 표시, false: 음이름 표시
+  showTension?: boolean;  // true: 텐션 표기로 덮어쓰기
 }
 
 export function Fretboard({
@@ -28,7 +45,9 @@ export function Fretboard({
   stringMidis,
   fretCount = 15,
   showDegrees = true,
+  showTension = false,
 }: FretboardProps) {
+  const rootNoteClass = rootMidi % 12;
   const stringCount = stringMidis.length;
   const svgHeight = TOP_PAD + (stringCount - 1) * STRING_SPACING + BOTTOM_PAD;
 
@@ -158,9 +177,20 @@ export function Fretboard({
               : "#e5e5e5"; // 나머지: 밝은 회색
 
             const textColor = note.isRoot ? "#1a1a1a" : "#1a1a1a";
-            const label = showDegrees
-              ? String(note.degree ?? "")
-              : note.noteName;
+
+            // 텐션 표기가 켜져 있으면 루트까지의 반음 간격으로 라벨 결정
+            let label: string;
+            if (showTension) {
+              const semitones = (note.noteClass - rootNoteClass + 12) % 12;
+              label = TENSION_LABELS[semitones];
+            } else {
+              label = showDegrees ? String(note.degree ?? "") : note.noteName;
+            }
+
+            // 글자 수에 따라 폰트 크기 자동 조정 (b13, #11 등 3글자 대응)
+            const fontSize = label.length <= 1 ? 8.5
+              : label.length === 2 ? 7
+              : 5.5;
 
             return (
               <g key={`note-${note.string}-${note.fret}`}>
@@ -171,10 +201,10 @@ export function Fretboard({
                 <circle cx={cx} cy={cy} r={DOT_RADIUS} fill={fillColor} />
                 <text
                   x={cx}
-                  y={cy + 4}
+                  y={cy + (label.length >= 3 ? 2.5 : 3.5)}
                   textAnchor="middle"
                   fill={textColor}
-                  fontSize={note.isRoot ? 9 : 8}
+                  fontSize={fontSize}
                   fontWeight={note.isRoot ? "bold" : "normal"}
                   fontFamily="monospace"
                 >
