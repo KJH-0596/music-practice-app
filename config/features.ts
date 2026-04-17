@@ -18,10 +18,9 @@ export const FEATURES: FeatureConfig[] = [
     title: "Metronome",
     description: "BPM · 박자 · Tap Tempo",
   },
-  // 튜너 추가 예시:
-  // {
-  //   href: "/tuner",
-  //   title: "Tuner",
-  //   description: "크로매틱 튜너",
-  // },
+  {
+    href: "/tuner",
+    title: "Tuner",
+    description: "크로매틱 튜너 · 스트로보",
+  },
 ];
