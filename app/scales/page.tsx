@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useFeatureNavigation } from "@/hooks/useFeatureNavigation";
 import { Fretboard } from "@/components/Fretboard";
@@ -11,21 +11,53 @@ import { SCALES, type ScaleConfig } from "@/core/theory/scales";
 
 const DEFAULT_ROOT = 4;  // E
 const DEFAULT_SCALE = SCALES.find((s) => s.id === "minor_pentatonic")!;
-const DEFAULT_INSTRUMENT = INSTRUMENTS[0]; // Guitar 6현
+const DEFAULT_INSTRUMENT = INSTRUMENTS[0]; // 기타 6현
+
+// 7현 기타 기준 고정 높이: TOP_PAD(22) + (7-1) × STRING_SPACING(28) + BOTTOM_PAD(22) = 212px
+const FRETBOARD_FIXED_HEIGHT = 212;
+
+// 반음 → 텐션 표기 (Fretboard.tsx와 동일한 매핑)
+const TENSION_LABELS: Record<number, string> = {
+  0: "1", 1: "b9", 2: "9",  3: "#9",
+  4: "3", 5: "11", 6: "#11", 7: "5",
+  8: "b13", 9: "13", 10: "b7", 11: "7",
+};
+
+// 반응형 프렛 수: 컨테이너 700px → 15프렛, 이후 80px당 +1, 최대 24프렛
+function calcFretCount(containerWidth: number): number {
+  const computed = Math.round(15 + (containerWidth - 700) / 80);
+  return Math.max(15, Math.min(24, computed));
+}
 
 export default function ScalesPage() {
   const [rootIndex, setRootIndex] = useState(DEFAULT_ROOT);
   const [scale, setScale] = useState<ScaleConfig>(DEFAULT_SCALE);
   const [instrument, setInstrument] = useState<InstrumentConfig>(DEFAULT_INSTRUMENT);
   const [showDegrees, setShowDegrees] = useState(true);
+  const [showTension, setShowTension] = useState(false);
+  const [fretCount, setFretCount] = useState(15);
+
+  const fretboardRef = useRef<HTMLDivElement>(null);
 
   useFeatureNavigation("/scales");
+
+  // 컨테이너 너비 감지 → 프렛 수 동적 조정
+  useEffect(() => {
+    const el = fretboardRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setFretCount(calcFretCount(entry.contentRect.width));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // 루트음 MIDI: C4(60) 기준으로 옥타브 고정 (시각화용, 음정 클래스만 중요)
   const rootMidi = 60 + rootIndex;
 
   return (
     <main className="min-h-screen bg-neutral-950 flex flex-col">
+
       {/* 헤더 */}
       <header className="flex items-center px-6 pt-6">
         <Link
@@ -39,90 +71,131 @@ export default function ScalesPage() {
         </Link>
       </header>
 
-      <div className="flex-1 flex flex-col gap-8 px-6 py-8 max-w-5xl w-full mx-auto">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xs tracking-[0.3em] text-neutral-600 uppercase font-medium">
-            Scale Guide
-          </h1>
+      {/* ── 타이틀 행 (폭 제한) ── */}
+      <div className="px-6 pt-8 pb-4 max-w-5xl w-full mx-auto flex items-center justify-between">
+        <h1 className="text-xs tracking-[0.3em] text-neutral-600 uppercase font-medium">
+          Scale Guide
+        </h1>
+        <span className="text-sm text-neutral-400">
+          {NOTE_NAMES[rootIndex]} {scale.name}
+        </span>
+      </div>
 
-          {/* 현재 선택 요약 */}
-          <span className="text-sm text-neutral-400">
-            {NOTE_NAMES[rootIndex]} {scale.name}
-          </span>
-        </div>
-
-        {/* ── 지판 ── */}
-        <div className="rounded-xl overflow-hidden border border-neutral-800/60">
+      {/* ── 지판 (24프렛 기준 최대 너비 고정) ── */}
+      <div className="px-6">
+        <div
+          ref={fretboardRef}
+          className="rounded-xl overflow-hidden border border-neutral-800/60 bg-[#0a0a0a] flex items-center w-full max-w-[1420px] mx-auto"
+          style={{ minHeight: FRETBOARD_FIXED_HEIGHT }}
+        >
           <Fretboard
             rootMidi={rootMidi}
             intervals={scale.intervals}
             stringMidis={instrument.strings}
-            fretCount={instrument.fretCount}
+            fretCount={fretCount}
             showDegrees={showDegrees}
+            showTension={showTension}
           />
         </div>
+      </div>
 
-        {/* ── 컨트롤 영역 ── */}
-        <div className="flex flex-col gap-6">
+      {/* ── 컨트롤 영역 (폭 제한) ── */}
+      <div className="px-6 py-8 max-w-5xl w-full mx-auto flex flex-col gap-6">
 
-          {/* 악기 선택 + 표시 모드 토글 */}
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex gap-1.5">
-              {INSTRUMENTS.map((inst) => (
-                <button
-                  key={inst.id}
-                  onClick={() => setInstrument(inst)}
-                  className={`
-                    px-3 h-8 rounded-lg text-xs transition-all duration-150
-                    ${instrument.id === inst.id
-                      ? "bg-neutral-700 text-neutral-200"
-                      : "bg-neutral-900 text-neutral-600 hover:text-neutral-400 border border-neutral-800"
-                    }
-                  `}
-                >
-                  {inst.label}
-                </button>
-              ))}
-            </div>
-
-            {/* 도수 / 음이름 토글 */}
-            <button
-              onClick={() => setShowDegrees((v) => !v)}
-              className="px-3 h-8 rounded-lg text-xs bg-neutral-900 text-neutral-500 hover:text-neutral-300 border border-neutral-800 transition-colors"
-            >
-              {showDegrees ? "도수 표시 중" : "음이름 표시 중"}
-            </button>
+        {/* 악기 선택 + 표시 모드 토글 */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap">
+            {INSTRUMENTS.map((inst) => (
+              <button
+                key={inst.id}
+                onClick={() => setInstrument(inst)}
+                className={`
+                  px-3 h-8 rounded-lg text-xs transition-all duration-150
+                  ${instrument.id === inst.id
+                    ? "bg-neutral-700 text-neutral-200"
+                    : "bg-neutral-900 text-neutral-600 hover:text-neutral-400 border border-neutral-800"
+                  }
+                `}
+              >
+                {inst.label}
+              </button>
+            ))}
           </div>
 
-          {/* 루트 선택 */}
-          <RootSelector rootIndex={rootIndex} onChange={setRootIndex} />
+          {/* 도수 / 음이름 토글 */}
+          <button
+            onClick={() => setShowDegrees((v) => !v)}
+            className="px-3 h-8 rounded-lg text-xs bg-neutral-900 text-neutral-500 hover:text-neutral-300 border border-neutral-800 transition-colors"
+          >
+            {showDegrees ? "도수 표시 중" : "음이름 표시 중"}
+          </button>
 
-          {/* 스케일 선택 */}
-          <ScaleSelector selectedId={scale.id} onChange={setScale} />
+          {/* 텐션 표기 토글 */}
+          <button
+            onClick={() => setShowTension((v) => !v)}
+            className={`
+              px-3 h-8 rounded-lg text-xs transition-all duration-150
+              ${showTension
+                ? "bg-amber-400/15 text-amber-400 border border-amber-400/40"
+                : "bg-neutral-900 text-neutral-500 hover:text-neutral-300 border border-neutral-800"
+              }
+            `}
+          >
+            텐션 표기
+          </button>
+        </div>
 
-          {/* 스케일 인터벌 정보 */}
-          <div className="flex flex-col gap-2">
-            <span className="text-[10px] tracking-widest text-neutral-700 uppercase font-medium">
-              Intervals
-            </span>
-            <div className="flex gap-2 flex-wrap">
-              {scale.intervals.map((interval, i) => (
+        {/* 루트 선택 */}
+        <RootSelector rootIndex={rootIndex} onChange={setRootIndex} />
+
+        {/* 스케일 선택 */}
+        <ScaleSelector selectedId={scale.id} onChange={setScale} />
+
+        {/* 스케일 인터벌 정보 */}
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] tracking-widest text-neutral-700 uppercase font-medium">
+            Intervals
+          </span>
+          <div className="flex gap-2 flex-wrap">
+            {scale.intervals.map((interval, i) => {
+              const tensionLabel = TENSION_LABELS[interval];
+              const isRoot = i === 0;
+
+              // 글자 수에 따라 폰트 크기 조정 (텐션 모드에서 b13, #11 등 3글자 대응)
+              const labelFontSize = showTension && tensionLabel.length >= 3
+                ? "text-[9px]"
+                : showTension && tensionLabel.length === 2
+                  ? "text-[10px]"
+                  : "text-xs";
+
+              return (
                 <div key={i} className="flex flex-col items-center gap-0.5">
-                  <span className={`
-                    w-8 h-8 rounded-full flex items-center justify-center text-xs font-mono
-                    ${i === 0
-                      ? "bg-amber-400 text-neutral-900 font-bold"
-                      : "bg-neutral-800 text-neutral-400"
+                  <span
+                    className={`
+                      w-8 h-8 rounded-full flex items-center justify-center font-mono font-bold
+                      transition-all duration-200
+                      ${labelFontSize}
+                      ${isRoot
+                        ? "bg-amber-400 text-neutral-900"
+                        : showTension
+                          ? "bg-amber-400/10 text-amber-400 border border-amber-400/40"
+                          : "bg-neutral-800 text-neutral-400"
+                      }
+                    `}
+                    style={
+                      showTension && !isRoot
+                        ? { boxShadow: "0 0 8px rgba(251,191,36,0.35), 0 0 2px rgba(251,191,36,0.6)" }
+                        : undefined
                     }
-                  `}>
-                    {i + 1}
+                  >
+                    {showTension ? tensionLabel : i + 1}
                   </span>
                   <span className="text-[9px] text-neutral-700 font-mono">
                     +{interval}
                   </span>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </div>
       </div>
