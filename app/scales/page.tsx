@@ -7,10 +7,9 @@ import { Fretboard } from "@/components/Fretboard";
 import { RootSelector } from "@/components/RootSelector";
 import { ScaleSelector } from "@/components/ScaleSelector";
 import { NOTE_NAMES, INSTRUMENTS, type InstrumentConfig } from "@/core/theory/constants";
-import { SCALES, type ScaleConfig } from "@/core/theory/scales";
+import { SCALES } from "@/core/theory/scales";
+import { useScaleStore } from "@/store/useScaleStore";
 
-const DEFAULT_ROOT = 4;  // E
-const DEFAULT_SCALE = SCALES.find((s) => s.id === "minor_pentatonic")!;
 const DEFAULT_INSTRUMENT = INSTRUMENTS[0]; // 기타 6현
 
 // 7현 기타 기준 고정 높이: TOP_PAD(22) + (7-1) × STRING_SPACING(28) + BOTTOM_PAD(22) = 212px
@@ -30,8 +29,10 @@ function calcFretCount(containerWidth: number): number {
 }
 
 export default function ScalesPage() {
-  const [rootIndex, setRootIndex] = useState(DEFAULT_ROOT);
-  const [scale, setScale] = useState<ScaleConfig>(DEFAULT_SCALE);
+  // 루트·스케일은 전역 store (퀴즈 페이지와 공유)
+  const { rootIndex, scaleId, setRootIndex, setScaleId } = useScaleStore();
+  const scale = SCALES.find((s) => s.id === scaleId) ?? SCALES[0];
+
   const [instrument, setInstrument] = useState<InstrumentConfig>(DEFAULT_INSTRUMENT);
   const [showDegrees, setShowDegrees] = useState(true);
   const [showTension, setShowTension] = useState(false);
@@ -149,7 +150,7 @@ export default function ScalesPage() {
         <RootSelector rootIndex={rootIndex} onChange={setRootIndex} />
 
         {/* 스케일 선택 */}
-        <ScaleSelector selectedId={scale.id} onChange={setScale} />
+        <ScaleSelector selectedId={scaleId} onChange={(s) => setScaleId(s.id)} />
 
         {/* 스케일 인터벌 정보 */}
         <div className="flex flex-col gap-2">

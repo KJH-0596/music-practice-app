@@ -28,4 +28,9 @@ export const FEATURES: FeatureConfig[] = [
     title: "Scale Guide",
     description: "스케일 · 모드 · 지판 시각화",
   },
+  {
+    href: "/quiz",
+    title: "Scale Quiz",
+    description: "지판 클릭 · 스케일 테스트",
+  },
 ];

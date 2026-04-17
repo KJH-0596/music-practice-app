@@ -33,6 +33,18 @@ const ICONS: Record<string, React.ReactNode> = {
       <circle cx="21.5" cy="17" r="1.5" fill="currentColor" stroke="none" />
     </svg>
   ),
+  "/quiz": (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="8" width="22" height="12" rx="2" />
+      <line x1="3" y1="14" x2="25" y2="14" />
+      <line x1="9" y1="8" x2="9" y2="20" />
+      <line x1="14" y1="8" x2="14" y2="20" />
+      <line x1="19" y1="8" x2="19" y2="20" />
+      <circle cx="6.5" cy="17" r="2" fill="currentColor" stroke="none" />
+      <path d="M11.5 11 l1.5 3 l1.5-3" strokeWidth="1.8" />
+      <circle cx="21.5" cy="11" r="2" fill="currentColor" stroke="none" />
+    </svg>
+  ),
 };
 
 export default function HomePage() {
@@ -47,7 +59,7 @@ export default function HomePage() {
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-2xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-4xl">
         {FEATURES.map((feature) => (
           <FeatureCard
             key={feature.href}

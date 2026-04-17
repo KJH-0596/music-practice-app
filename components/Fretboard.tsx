@@ -30,6 +30,8 @@ const RIGHT_PAD = 12;
 const STRING_SPACING = 28;
 const DOT_RADIUS = 10;
 
+export type QuizMark = { string: number; fret: number; id: string };
+
 interface FretboardProps {
   rootMidi: number;
   intervals: number[];
@@ -37,6 +39,11 @@ interface FretboardProps {
   fretCount?: number;
   showDegrees?: boolean;  // true: 도수 표시, false: 음이름 표시
   showTension?: boolean;  // true: 텐션 표기로 덮어쓰기
+  // ── 퀴즈 모드 (선택) ───────────────────────
+  quizMode?: boolean;     // 스케일 도트 숨김 + 클릭 활성화
+  onFretClick?: (stringIdx: number, fret: number, noteClass: number) => void;
+  correctMarks?: QuizMark[];   // 초록 도트 (최근 10개)
+  wrongMarks?: QuizMark[];     // 빨간 도트 (타이머로 소멸)
 }
 
 export function Fretboard({
@@ -46,6 +53,10 @@ export function Fretboard({
   fretCount = 15,
   showDegrees = true,
   showTension = false,
+  quizMode = false,
+  onFretClick,
+  correctMarks = [],
+  wrongMarks = [],
 }: FretboardProps) {
   const rootNoteClass = rootMidi % 12;
   const stringCount = stringMidis.length;
@@ -164,8 +175,55 @@ export function Fretboard({
           </text>
         ))}
 
-        {/* ── 스케일 음 도트 ── */}
-        {fretboard.map((stringNotes) =>
+        {/* ── 퀴즈 모드: 클릭 영역 ── */}
+        {quizMode && onFretClick && fretboard.map((stringNotes) =>
+          stringNotes.map((note: FretNote) => {
+            const x = note.fret === 0
+              ? LEFT_PAD
+              : nutX + (note.fret - 1) * fretSpacing;
+            const w = note.fret === 0 ? OPEN_WIDTH : fretSpacing;
+            const y = stringY(note.string) - STRING_SPACING / 2;
+            const h = STRING_SPACING;
+            return (
+              <rect
+                key={`hit-${note.string}-${note.fret}`}
+                x={x} y={y} width={w} height={h}
+                fill="transparent"
+                style={{ cursor: "pointer" }}
+                onClick={() => onFretClick(note.string, note.fret, note.noteClass)}
+              />
+            );
+          })
+        )}
+
+        {/* ── 퀴즈 모드: 정답 마크 (초록) ── */}
+        {correctMarks.map((m) => {
+          const cx = fretCenterX(m.fret);
+          const cy = stringY(m.string);
+          return (
+            <g key={m.id}>
+              <circle cx={cx} cy={cy} r={DOT_RADIUS + 2} fill="rgba(34,197,94,0.2)" />
+              <circle cx={cx} cy={cy} r={DOT_RADIUS} fill="#22c55e" />
+              <text x={cx} y={cy + 3.5} textAnchor="middle" fill="#052e16" fontSize={7} fontFamily="monospace" fontWeight="bold">✓</text>
+            </g>
+          );
+        })}
+
+        {/* ── 퀴즈 모드: 오답 마크 (빨강) ── */}
+        {wrongMarks.map((m) => {
+          const cx = fretCenterX(m.fret);
+          const cy = stringY(m.string);
+          return (
+            <g key={m.id}>
+              <circle cx={cx} cy={cy} r={DOT_RADIUS + 2} fill="rgba(239,68,68,0.2)" />
+              <circle cx={cx} cy={cy} r={DOT_RADIUS} fill="#ef4444" />
+              <text x={cx} y={cy + 3.5} textAnchor="middle" fill="#fff" fontSize={8} fontFamily="monospace" fontWeight="bold">✕</text>
+            </g>
+          );
+        })}
+
+        {/* ── 스케일 음 도트 (퀴즈 모드에서 숨김) ── */}
+        {!quizMode && fretboard.map((stringNotes) =>
           stringNotes.map((note: FretNote) => {
             if (!note.isInScale) return null;
 
