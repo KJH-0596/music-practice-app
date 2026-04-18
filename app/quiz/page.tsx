@@ -180,7 +180,7 @@ export default function QuizPage() {
         </Link>
 
         {/* 스코어 */}
-        <div className="flex items-center gap-3 text-xs font-mono">
+        <div className="flex items-center gap-3 text-xs font-mono pr-10">
           <span className="text-green-400">✓ {score.correct}</span>
           <span className="text-neutral-700">|</span>
           <span className="text-red-400">✕ {score.wrong}</span>
