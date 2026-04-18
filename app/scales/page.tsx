@@ -6,7 +6,11 @@ import { useFeatureNavigation } from "@/hooks/useFeatureNavigation";
 import { Fretboard } from "@/components/Fretboard";
 import { RootSelector } from "@/components/RootSelector";
 import { ScaleSelector } from "@/components/ScaleSelector";
-import { NOTE_NAMES, INSTRUMENTS, type InstrumentConfig } from "@/core/theory/constants";
+import {
+  NOTE_NAMES,
+  INSTRUMENTS,
+  type InstrumentConfig,
+} from "@/core/theory/constants";
 import { SCALES } from "@/core/theory/scales";
 import { useScaleStore } from "@/store/useScaleStore";
 
@@ -17,9 +21,18 @@ const FRETBOARD_FIXED_HEIGHT = 212;
 
 // 반음 → 텐션 표기 (Fretboard.tsx와 동일한 매핑)
 const TENSION_LABELS: Record<number, string> = {
-  0: "1", 1: "b9", 2: "9",  3: "#9",
-  4: "3", 5: "11", 6: "#11", 7: "5",
-  8: "b13", 9: "13", 10: "b7", 11: "7",
+  0: "1",
+  1: "b9",
+  2: "9",
+  3: "#9",
+  4: "3",
+  5: "11",
+  6: "#11",
+  7: "5",
+  8: "b13",
+  9: "13",
+  10: "b7",
+  11: "7",
 };
 
 // 반응형 프렛 수: 컨테이너 700px → 15프렛, 이후 80px당 +1, 최대 24프렛
@@ -33,7 +46,8 @@ export default function ScalesPage() {
   const { rootIndex, scaleId, setRootIndex, setScaleId } = useScaleStore();
   const scale = SCALES.find((s) => s.id === scaleId) ?? SCALES[0];
 
-  const [instrument, setInstrument] = useState<InstrumentConfig>(DEFAULT_INSTRUMENT);
+  const [instrument, setInstrument] =
+    useState<InstrumentConfig>(DEFAULT_INSTRUMENT);
   const [showDegrees, setShowDegrees] = useState(true);
   const [showTension, setShowTension] = useState(false);
   const [fretCount, setFretCount] = useState(15);
@@ -58,14 +72,22 @@ export default function ScalesPage() {
 
   return (
     <main className="min-h-screen bg-neutral-950 flex flex-col">
-
       {/* 헤더 */}
       <header className="flex items-center px-6 pt-6">
         <Link
           href="/"
           className="flex items-center gap-2 text-neutral-500 hover:text-neutral-300 transition-colors text-sm"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M10.5 3L5.5 8l5 5" />
           </svg>
           홈
@@ -77,9 +99,28 @@ export default function ScalesPage() {
         <h1 className="text-xs tracking-[0.3em] text-neutral-600 uppercase font-medium">
           Scale Guide
         </h1>
-        <span className="text-sm text-neutral-400">
-          {NOTE_NAMES[rootIndex]} {scale.name}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-neutral-400">
+            {NOTE_NAMES[rootIndex]} {scale.name}
+          </span>
+          <Link
+            href="/quiz"
+            className="flex items-center gap-1.5 px-3 h-7 rounded-lg text-xs bg-neutral-900 text-neutral-500 hover:text-amber-400 hover:border-amber-400/40 border border-neutral-800 transition-all duration-150"
+          >
+            퀴즈
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 11 11"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
+              <path d="M3 5.5h5M6 3l2.5 2.5L6 8" />
+            </svg>
+          </Link>
+        </div>
       </div>
 
       {/* ── 지판 (24프렛 기준 최대 너비 고정) ── */}
@@ -102,7 +143,6 @@ export default function ScalesPage() {
 
       {/* ── 컨트롤 영역 (폭 제한) ── */}
       <div className="px-6 py-8 max-w-5xl w-full mx-auto flex flex-col gap-6">
-
         {/* 악기 선택 + 표시 모드 토글 */}
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex gap-1.5 flex-wrap">
@@ -112,9 +152,10 @@ export default function ScalesPage() {
                 onClick={() => setInstrument(inst)}
                 className={`
                   px-3 h-8 rounded-lg text-xs transition-all duration-150
-                  ${instrument.id === inst.id
-                    ? "bg-neutral-700 text-neutral-200"
-                    : "bg-neutral-900 text-neutral-600 hover:text-neutral-400 border border-neutral-800"
+                  ${
+                    instrument.id === inst.id
+                      ? "bg-neutral-700 text-neutral-200"
+                      : "bg-neutral-900 text-neutral-600 hover:text-neutral-400 border border-neutral-800"
                   }
                 `}
               >
@@ -136,9 +177,10 @@ export default function ScalesPage() {
             onClick={() => setShowTension((v) => !v)}
             className={`
               px-3 h-8 rounded-lg text-xs transition-all duration-150
-              ${showTension
-                ? "bg-amber-400/15 text-amber-400 border border-amber-400/40"
-                : "bg-neutral-900 text-neutral-500 hover:text-neutral-300 border border-neutral-800"
+              ${
+                showTension
+                  ? "bg-amber-400/15 text-amber-400 border border-amber-400/40"
+                  : "bg-neutral-900 text-neutral-500 hover:text-neutral-300 border border-neutral-800"
               }
             `}
           >
@@ -150,7 +192,10 @@ export default function ScalesPage() {
         <RootSelector rootIndex={rootIndex} onChange={setRootIndex} />
 
         {/* 스케일 선택 */}
-        <ScaleSelector selectedId={scaleId} onChange={(s) => setScaleId(s.id)} />
+        <ScaleSelector
+          selectedId={scaleId}
+          onChange={(s) => setScaleId(s.id)}
+        />
 
         {/* 스케일 인터벌 정보 */}
         <div className="flex flex-col gap-2">
@@ -163,11 +208,12 @@ export default function ScalesPage() {
               const isRoot = i === 0;
 
               // 글자 수에 따라 폰트 크기 조정 (텐션 모드에서 b13, #11 등 3글자 대응)
-              const labelFontSize = showTension && tensionLabel.length >= 3
-                ? "text-[9px]"
-                : showTension && tensionLabel.length === 2
-                  ? "text-[10px]"
-                  : "text-xs";
+              const labelFontSize =
+                showTension && tensionLabel.length >= 3
+                  ? "text-[9px]"
+                  : showTension && tensionLabel.length === 2
+                    ? "text-[10px]"
+                    : "text-xs";
 
               return (
                 <div key={i} className="flex flex-col items-center gap-0.5">
@@ -176,16 +222,20 @@ export default function ScalesPage() {
                       w-8 h-8 rounded-full flex items-center justify-center font-mono font-bold
                       transition-all duration-200
                       ${labelFontSize}
-                      ${isRoot
-                        ? "bg-amber-400 text-neutral-900"
-                        : showTension
-                          ? "bg-amber-400/10 text-amber-400 border border-amber-400/40"
-                          : "bg-neutral-800 text-neutral-400"
+                      ${
+                        isRoot
+                          ? "bg-amber-400 text-neutral-900"
+                          : showTension
+                            ? "bg-amber-400/10 text-amber-400 border border-amber-400/40"
+                            : "bg-neutral-800 text-neutral-400"
                       }
                     `}
                     style={
                       showTension && !isRoot
-                        ? { boxShadow: "0 0 8px rgba(251,191,36,0.35), 0 0 2px rgba(251,191,36,0.6)" }
+                        ? {
+                            boxShadow:
+                              "0 0 8px rgba(251,191,36,0.35), 0 0 2px rgba(251,191,36,0.6)",
+                          }
                         : undefined
                     }
                   >

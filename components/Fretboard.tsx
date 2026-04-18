@@ -30,7 +30,7 @@ const RIGHT_PAD = 12;
 const STRING_SPACING = 28;
 const DOT_RADIUS = 10;
 
-export type QuizMark = { string: number; fret: number; id: string };
+export type QuizMark = { string: number; fret: number; id: string; dying?: boolean };
 
 interface FretboardProps {
   rootMidi: number;
@@ -196,28 +196,65 @@ export function Fretboard({
           })
         )}
 
-        {/* ── 퀴즈 모드: 정답 마크 (초록) ── */}
+        {/* ── 퀴즈 모드: 정답 마크 (초록 — 텐션 표기 스타일 + 도수 라벨) ── */}
         {correctMarks.map((m) => {
           const cx = fretCenterX(m.fret);
           const cy = stringY(m.string);
+          const note = fretboard[m.string]?.[m.fret];
+          const label = note ? String(note.degree ?? note.noteName) : "";
+          const fontSize = label.length <= 1 ? 8.5 : label.length === 2 ? 7 : 5.5;
           return (
-            <g key={m.id}>
-              <circle cx={cx} cy={cy} r={DOT_RADIUS + 2} fill="rgba(34,197,94,0.2)" />
-              <circle cx={cx} cy={cy} r={DOT_RADIUS} fill="#22c55e" />
-              <text x={cx} y={cy + 3.5} textAnchor="middle" fill="#052e16" fontSize={7} fontFamily="monospace" fontWeight="bold">✓</text>
+            <g
+              key={m.id}
+              style={{
+                opacity: m.dying ? 0 : 1,
+                transition: "opacity 0.5s ease-out",
+              }}
+            >
+              <circle cx={cx} cy={cy} r={DOT_RADIUS + 4} fill="rgba(34,197,94,0.10)" />
+              <circle
+                cx={cx} cy={cy} r={DOT_RADIUS}
+                fill="rgba(34,197,94,0.18)"
+                stroke="rgba(34,197,94,0.65)"
+                strokeWidth="1"
+                style={{ filter: "drop-shadow(0 0 4px rgba(34,197,94,0.75))" }}
+              />
+              {label && (
+                <text
+                  x={cx} y={cy + 3.5}
+                  textAnchor="middle"
+                  fill="rgba(34,197,94,0.9)"
+                  fontSize={fontSize}
+                  fontWeight="bold"
+                  fontFamily="monospace"
+                >
+                  {label}
+                </text>
+              )}
             </g>
           );
         })}
 
-        {/* ── 퀴즈 모드: 오답 마크 (빨강) ── */}
+        {/* ── 퀴즈 모드: 오답 마크 (빨강 — 텐션 표기 스타일) ── */}
         {wrongMarks.map((m) => {
           const cx = fretCenterX(m.fret);
           const cy = stringY(m.string);
           return (
-            <g key={m.id}>
-              <circle cx={cx} cy={cy} r={DOT_RADIUS + 2} fill="rgba(239,68,68,0.2)" />
-              <circle cx={cx} cy={cy} r={DOT_RADIUS} fill="#ef4444" />
-              <text x={cx} y={cy + 3.5} textAnchor="middle" fill="#fff" fontSize={8} fontFamily="monospace" fontWeight="bold">✕</text>
+            <g
+              key={m.id}
+              style={{
+                opacity: m.dying ? 0 : 1,
+                transition: "opacity 0.5s ease-out",
+              }}
+            >
+              <circle cx={cx} cy={cy} r={DOT_RADIUS + 4} fill="rgba(239,68,68,0.10)" />
+              <circle
+                cx={cx} cy={cy} r={DOT_RADIUS}
+                fill="rgba(239,68,68,0.18)"
+                stroke="rgba(239,68,68,0.65)"
+                strokeWidth="1"
+                style={{ filter: "drop-shadow(0 0 4px rgba(239,68,68,0.75))" }}
+              />
             </g>
           );
         })}

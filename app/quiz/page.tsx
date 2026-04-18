@@ -24,7 +24,7 @@ export default function QuizPage() {
   useFeatureNavigation("/quiz");
 
   // ── 공유 스케일 state ──
-  const { rootIndex, scaleId } = useScaleStore();
+  const { rootIndex, scaleId, setRootIndex, setScaleId } = useScaleStore();
   const scale = SCALES.find((s) => s.id === scaleId) ?? SCALES[0];
   const rootMidi = 60 + rootIndex;
   const { noteClasses } = getScaleInfo(rootMidi, scale.intervals);
@@ -53,12 +53,12 @@ export default function QuizPage() {
     return () => observer.disconnect();
   }, []);
 
-  // ── 마킹 초기화 (스케일/루트 변경 시) ──
+  // ── 마킹 초기화 (스케일/루트/악기 변경 시) ──
   useEffect(() => {
     setCorrectMarks([]);
     setWrongMarks([]);
     setScore({ correct: 0, wrong: 0 });
-  }, [rootIndex, scaleId]);
+  }, [rootIndex, scaleId, instrument.id]);
 
   // ── 프렛 클릭 판정 ──
   const handleFretClick = useCallback(
@@ -75,10 +75,14 @@ export default function QuizPage() {
       } else {
         setWrongMarks((prev) => [...prev, { string: stringIdx, fret, id }]);
         setScore((s) => ({ ...s, wrong: s.wrong + 1 }));
-        // 1.5초 후 오답 마크 자동 제거
+        // 1.2초 후 dying 상태 → opacity 0 트랜지션 시작
+        setTimeout(() => {
+          setWrongMarks((prev) => prev.map((m) => m.id === id ? { ...m, dying: true } : m));
+        }, 1200);
+        // 1.7초 후 DOM에서 제거 (0.5초 fade 완료 후)
         setTimeout(() => {
           setWrongMarks((prev) => prev.filter((m) => m.id !== id));
-        }, 1500);
+        }, 1700);
       }
     },
     [noteClasses]
@@ -89,6 +93,14 @@ export default function QuizPage() {
     setWrongMarks([]);
     setScore({ correct: 0, wrong: 0 });
   };
+
+  // 랜덤 스케일 + 루트 선택
+  const handleRandom = useCallback(() => {
+    const newRoot = Math.floor(Math.random() * 12);
+    const newScale = SCALES[Math.floor(Math.random() * SCALES.length)];
+    setRootIndex(newRoot);
+    setScaleId(newScale.id);
+  }, [setRootIndex, setScaleId]);
 
   const hasScale = !!scale;
 
@@ -126,20 +138,36 @@ export default function QuizPage() {
         </div>
       </header>
 
-      {/* 타이틀 + 현재 스케일 */}
+      {/* 타이틀 + 랜덤 버튼 + 현재 스케일 */}
       <div className="px-6 pt-6 pb-4 max-w-5xl w-full mx-auto flex items-center justify-between">
         <h1 className="text-xs tracking-[0.3em] text-neutral-600 uppercase font-medium">
           Scale Quiz
         </h1>
-        <Link
-          href="/scales"
-          className="flex items-center gap-1.5 text-sm text-amber-400 hover:text-amber-300 transition-colors"
-        >
-          {NOTE_NAMES[rootIndex]} {scale.name}
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-            <path d="M4.5 2.5L8 6l-3.5 3.5" />
-          </svg>
-        </Link>
+        <div className="flex items-center gap-2">
+          {/* 랜덤 버튼 */}
+          <button
+            onClick={handleRandom}
+            title="랜덤 스케일"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-neutral-600 hover:text-amber-400 hover:bg-neutral-800 transition-all duration-150"
+          >
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 5h8.5a2 2 0 0 1 2 2v1" />
+              <path d="M10 3l2.5 2L10 7" />
+              <path d="M13 10H4.5a2 2 0 0 1-2-2V7" />
+              <path d="M5 12l-2.5-2L5 8" />
+            </svg>
+          </button>
+          {/* 스케일 이름 (클릭 시 Scale Guide로 이동) */}
+          <Link
+            href="/scales"
+            className="flex items-center gap-1.5 text-sm text-amber-400 hover:text-amber-300 transition-colors"
+          >
+            {NOTE_NAMES[rootIndex]} {scale.name}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M4.5 2.5L8 6l-3.5 3.5" />
+            </svg>
+          </Link>
+        </div>
       </div>
 
       {/* 스케일 미선택 안내 */}
