@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useFeatureNavigation } from "@/hooks/useFeatureNavigation";
 import { Fretboard, type QuizMark } from "@/components/Fretboard";
 import { EdgeFlash } from "@/components/EdgeFlash";
+import { StrobeTuner } from "@/components/StrobeTuner";
+import { useTuner } from "@/hooks/useTuner";
 import { useScaleStore } from "@/store/useScaleStore";
 import { SCALES } from "@/core/theory/scales";
 import { NOTE_NAMES, INSTRUMENTS, type InstrumentConfig } from "@/core/theory/constants";
@@ -41,6 +43,15 @@ export default function QuizPage() {
   const [flashType, setFlashType] = useState<"correct" | "wrong">("correct");
   const [score, setScore] = useState({ correct: 0, wrong: 0 });
 
+  // ── 스케일 커버리지 (기타 연주 모드) ──
+  const [coverage, setCoverage] = useState<Set<number>>(new Set());
+
+  // ── 튜너 훅 ──
+  const { state: tunerState, pitch, errorMessage, start, stop } = useTuner();
+
+  // ── 직전 트리거 음정 클래스 (중복 방지) ──
+  const lastNoteClassRef = useRef<number>(-1);
+
   // ── 반응형 프렛 수 ──
   const fretboardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -53,14 +64,56 @@ export default function QuizPage() {
     return () => observer.disconnect();
   }, []);
 
-  // ── 마킹 초기화 (스케일/루트/악기 변경 시) ──
+  // ── 마킹·커버리지 초기화 (스케일/루트/악기 변경 시) ──
   useEffect(() => {
     setCorrectMarks([]);
     setWrongMarks([]);
     setScore({ correct: 0, wrong: 0 });
+    setCoverage(new Set());
+    lastNoteClassRef.current = -1;
   }, [rootIndex, scaleId, instrument.id]);
 
-  // ── 프렛 클릭 판정 ──
+  // ── 모드 전환 시 마이크 자동 시작/정지 ──
+  useEffect(() => {
+    if (mode === "guitar") {
+      start();
+    } else {
+      stop();
+      lastNoteClassRef.current = -1;
+    }
+  }, [mode, start, stop]);
+
+  // ── 기타 연주 모드: 피치 감지 → 스케일 판정 ──
+  useEffect(() => {
+    if (mode !== "guitar") return;
+
+    if (!pitch) {
+      // 무음 → 동일 음 재트리거 허용 (다시 소리가 나면 새로 판정)
+      lastNoteClassRef.current = -1;
+      return;
+    }
+
+    // MIDI 음번호 → 음정 클래스 (0~11)
+    const midiRound = Math.round(12 * Math.log2(pitch.frequency / 440) + 69);
+    const noteClass = ((midiRound % 12) + 12) % 12;
+
+    // 동일 음정 클래스는 중복 트리거 방지
+    if (noteClass === lastNoteClassRef.current) return;
+    lastNoteClassRef.current = noteClass;
+
+    const isCorrect = noteClasses.has(noteClass);
+    setFlashType(isCorrect ? "correct" : "wrong");
+    setFlashKey(Date.now());
+
+    if (isCorrect) {
+      setCoverage((prev) => new Set([...prev, noteClass]));
+      setScore((s) => ({ ...s, correct: s.correct + 1 }));
+    } else {
+      setScore((s) => ({ ...s, wrong: s.wrong + 1 }));
+    }
+  }, [pitch, mode, noteClasses]);
+
+  // ── 프렛 클릭 판정 (클릭 모드) ──
   const handleFretClick = useCallback(
     (stringIdx: number, fret: number, noteClass: number) => {
       const id = `${stringIdx}-${fret}-${Date.now()}`;
@@ -92,6 +145,8 @@ export default function QuizPage() {
     setCorrectMarks([]);
     setWrongMarks([]);
     setScore({ correct: 0, wrong: 0 });
+    setCoverage(new Set());
+    lastNoteClassRef.current = -1;
   };
 
   // 랜덤 스케일 + 루트 선택
@@ -107,7 +162,7 @@ export default function QuizPage() {
   return (
     <main className="min-h-screen bg-neutral-950 flex flex-col">
 
-      {/* EdgeFlash 오버레이: key가 바뀔 때마다 리마운트 → 애니메이션 재생 */}
+      {/* EdgeFlash 오버레이 */}
       {flashKey !== null && (
         <EdgeFlash key={flashKey} type={flashType} />
       )}
@@ -193,57 +248,143 @@ export default function QuizPage() {
             지판 클릭
           </button>
           <button
-            disabled
-            className="px-3 h-7 rounded-md text-xs text-neutral-700 cursor-not-allowed"
-            title="준비 중"
+            onClick={() => setMode("guitar")}
+            className={`px-3 h-7 rounded-md text-xs transition-all duration-150 ${
+              mode === "guitar"
+                ? "bg-neutral-700 text-neutral-200"
+                : "text-neutral-600 hover:text-neutral-400"
+            }`}
           >
             기타 연주
           </button>
         </div>
 
-        <div className="flex gap-1.5 flex-wrap">
-          {INSTRUMENTS.map((inst) => (
-            <button
-              key={inst.id}
-              onClick={() => setInstrument(inst)}
-              className={`px-3 h-8 rounded-lg text-xs transition-all duration-150 ${
-                instrument.id === inst.id
-                  ? "bg-neutral-700 text-neutral-200"
-                  : "bg-neutral-900 text-neutral-600 hover:text-neutral-400 border border-neutral-800"
-              }`}
-            >
-              {inst.label}
-            </button>
-          ))}
-        </div>
+        {/* 악기 선택 (클릭 모드에서만 의미 있음) */}
+        {mode === "click" && (
+          <div className="flex gap-1.5 flex-wrap">
+            {INSTRUMENTS.map((inst) => (
+              <button
+                key={inst.id}
+                onClick={() => setInstrument(inst)}
+                className={`px-3 h-8 rounded-lg text-xs transition-all duration-150 ${
+                  instrument.id === inst.id
+                    ? "bg-neutral-700 text-neutral-200"
+                    : "bg-neutral-900 text-neutral-600 hover:text-neutral-400 border border-neutral-800"
+                }`}
+              >
+                {inst.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* 지판 */}
-      <div className="px-6">
-        <div
-          ref={fretboardRef}
-          className="rounded-xl overflow-hidden border border-neutral-800/60 bg-[#0a0a0a] flex items-center w-full max-w-[1420px] mx-auto"
-          style={{ minHeight: FRETBOARD_FIXED_HEIGHT }}
-        >
-          <Fretboard
-            rootMidi={rootMidi}
-            intervals={scale.intervals}
-            stringMidis={instrument.strings}
-            fretCount={fretCount}
-            quizMode={mode === "click"}
-            onFretClick={mode === "click" ? handleFretClick : undefined}
-            correctMarks={correctMarks}
-            wrongMarks={wrongMarks}
-          />
+      {/* ── 클릭 모드: 지판 ── */}
+      {mode === "click" && (
+        <div className="px-6">
+          <div
+            ref={fretboardRef}
+            className="rounded-xl overflow-hidden border border-neutral-800/60 bg-[#0a0a0a] flex items-center w-full max-w-355 mx-auto"
+            style={{ minHeight: FRETBOARD_FIXED_HEIGHT }}
+          >
+            <Fretboard
+              rootMidi={rootMidi}
+              intervals={scale.intervals}
+              stringMidis={instrument.strings}
+              fretCount={fretCount}
+              quizMode={true}
+              onFretClick={handleFretClick}
+              correctMarks={correctMarks}
+              wrongMarks={wrongMarks}
+            />
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ── 기타 연주 모드: 튜너 + 커버리지 ── */}
+      {mode === "guitar" && (
+        <div className="px-6 flex flex-col items-center gap-10 py-4">
+
+          {/* 마이크 오류 안내 */}
+          {tunerState === "error" && errorMessage && (
+            <p className="text-red-400/80 text-sm text-center max-w-sm">{errorMessage}</p>
+          )}
+
+          {/* 마이크 대기 중 */}
+          {tunerState === "idle" && !errorMessage && (
+            <p className="text-neutral-700 text-xs tracking-widest animate-pulse">마이크 준비 중…</p>
+          )}
+
+          {/* StrobeTuner */}
+          <StrobeTuner pitch={pitch} isListening={tunerState === "listening"} />
+
+          {/* 주파수 표시 */}
+          {pitch && (
+            <p className="text-[11px] text-neutral-700 font-mono -mt-6">
+              {pitch.note}{pitch.octave} · {pitch.frequency} Hz
+            </p>
+          )}
+
+          {/* Scale Coverage */}
+          <div className="flex flex-col items-center gap-3 w-full max-w-sm">
+            <div className="flex items-center gap-3 w-full">
+              <span className="text-[10px] tracking-widest text-neutral-700 uppercase font-medium">
+                Scale Coverage
+              </span>
+              <span className="text-[10px] text-neutral-700 font-mono ml-auto">
+                {coverage.size} / {scale.intervals.length}
+              </span>
+            </div>
+
+            {/* 커버리지 바 */}
+            <div className="w-full h-1 bg-neutral-900 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-amber-400/60 rounded-full transition-all duration-500"
+                style={{ width: `${(coverage.size / scale.intervals.length) * 100}%` }}
+              />
+            </div>
+
+            {/* 스케일 음 도트 */}
+            <div className="flex gap-2 flex-wrap justify-center mt-1">
+              {scale.intervals.map((interval, i) => {
+                const nc = (rootMidi + interval) % 12;
+                const played = coverage.has(nc);
+                const noteName = NOTE_NAMES[nc];
+                const isRoot = i === 0;
+
+                return (
+                  <div key={i} className="flex flex-col items-center gap-1">
+                    <div
+                      className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-mono font-bold transition-all duration-300 ${
+                        played
+                          ? isRoot
+                            ? "bg-amber-400 text-neutral-900"
+                            : "bg-amber-400/15 text-amber-400 border border-amber-400/50"
+                          : "bg-neutral-900 text-neutral-700 border border-neutral-800"
+                      }`}
+                      style={
+                        played && !isRoot
+                          ? { boxShadow: "0 0 8px rgba(251,191,36,0.3), 0 0 2px rgba(251,191,36,0.5)" }
+                          : undefined
+                      }
+                    >
+                      {noteName}
+                    </div>
+                    <span className="text-[9px] text-neutral-700 font-mono">{i + 1}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 안내 문구 */}
-      <div className="px-6 pt-6 max-w-5xl w-full mx-auto">
+      <div className="px-6 pt-4 pb-6 max-w-5xl w-full mx-auto">
         <p className="text-xs text-neutral-700 text-center">
           {mode === "click"
             ? `${NOTE_NAMES[rootIndex]} ${scale.name} 스케일에 속하는 음을 지판에서 클릭하세요`
-            : "기타 연주 모드는 준비 중입니다"}
+            : `기타를 연주하면 음을 감지해 ${NOTE_NAMES[rootIndex]} ${scale.name} 스케일 여부를 판정합니다`}
         </p>
       </div>
     </main>

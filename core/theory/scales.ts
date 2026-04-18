@@ -13,21 +13,6 @@ export type ScaleConfig = {
 };
 
 export const SCALES: ScaleConfig[] = [
-  // ── 펜타토닉 ───────────────────────────────
-  {
-    id: "major_pentatonic",
-    name: "Major Pentatonic",
-    koreanName: "메이저 펜타토닉",
-    intervals: [0, 2, 4, 7, 9],
-    category: "pentatonic",
-  },
-  {
-    id: "minor_pentatonic",
-    name: "Minor Pentatonic",
-    koreanName: "마이너 펜타토닉",
-    intervals: [0, 3, 5, 7, 10],
-    category: "pentatonic",
-  },
   // ── Standard ────────────────────────────────
   {
     id: "major",

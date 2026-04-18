@@ -127,7 +127,7 @@ export default function ScalesPage() {
       <div className="px-6">
         <div
           ref={fretboardRef}
-          className="rounded-xl overflow-hidden border border-neutral-800/60 bg-[#0a0a0a] flex items-center w-full max-w-[1420px] mx-auto"
+          className="rounded-xl overflow-hidden border border-neutral-800/60 bg-[#0a0a0a] flex items-center w-full max-w-355 mx-auto"
           style={{ minHeight: FRETBOARD_FIXED_HEIGHT }}
         >
           <Fretboard
