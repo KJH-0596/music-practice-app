@@ -15,22 +15,22 @@ export type FeatureConfig = {
 export const FEATURES: FeatureConfig[] = [
   {
     href: "/metronome",
-    title: "Metronome",
-    description: "BPM · 박자 · Tap Tempo",
+    title: "메트로놈",
+    description: "Tap Tempo 기능을 포함한 기본적인 메트로놈입니다.",
   },
   {
     href: "/tuner",
-    title: "Tuner",
-    description: "크로매틱 튜너 · 스트로보",
+    title: "튜너",
+    description: "기본적인 튜너입니다.",
   },
   {
     href: "/scales",
-    title: "Scale Guide",
-    description: "스케일 · 모드 · 지판 시각화",
+    title: "스케일 가이드",
+    description: "여러 종류의 스케일을 지판에서 확인할 수 있습니다.",
   },
   {
     href: "/quiz",
-    title: "Scale Quiz",
-    description: "지판 클릭 · 스케일 테스트",
+    title: "트레이닝",
+    description: "스케일을 외웠는지 테스트합니다.",
   },
 ];

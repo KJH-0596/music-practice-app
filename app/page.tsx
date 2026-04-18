@@ -55,8 +55,11 @@ export default function HomePage() {
           Music Practice App
         </p>
         <h1 className="text-3xl font-light text-white tracking-tight">
-          실용음악 연습 도구
+          기타 스케일 연습 앱
         </h1>
+        <p className="text-xs tracking-widest text-amber-400/60 uppercase font-medium mt-2">
+          DEMO
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-4xl">
