@@ -107,7 +107,7 @@ export default function ScalesPage() {
             href="/quiz"
             className="flex items-center gap-1.5 px-3 h-7 rounded-lg text-xs bg-neutral-900 text-neutral-500 hover:text-amber-400 hover:border-amber-400/40 border border-neutral-800 transition-all duration-150"
           >
-            퀴즈
+            트레이닝
             <svg
               width="11"
               height="11"

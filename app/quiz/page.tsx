@@ -196,7 +196,7 @@ export default function QuizPage() {
       {/* 타이틀 + 랜덤 버튼 + 현재 스케일 */}
       <div className="px-6 pt-6 pb-4 max-w-5xl w-full mx-auto flex items-center justify-between">
         <h1 className="text-xs tracking-[0.3em] text-neutral-600 uppercase font-medium">
-          Scale Quiz
+          Training
         </h1>
         <div className="flex items-center gap-2">
           {/* 랜덤 버튼 */}
