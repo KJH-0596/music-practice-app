@@ -7,7 +7,7 @@ interface ScaleSelectorProps {
   onChange: (scale: ScaleConfig) => void;
 }
 
-const CATEGORY_ORDER: ScaleCategory[] = ["pentatonic", "blues", "diatonic", "altered", "mode"];
+const CATEGORY_ORDER: ScaleCategory[] = ["standard", "jazz", "dark", "rock_blues"];
 
 export function ScaleSelector({ selectedId, onChange }: ScaleSelectorProps) {
   const grouped = CATEGORY_ORDER.map((cat) => ({
