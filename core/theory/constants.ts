@@ -43,7 +43,7 @@ export const INSTRUMENTS: InstrumentConfig[] = [
   {
     id: "bass_6",
     label: "베이스 6현",
-    strings: [23, 28, 33, 38, 43, 47], // B0 E1 A1 D2 G2 C3
+    strings: [23, 28, 33, 38, 43, 48], // B0 E1 A1 D2 G2 C3
     fretCount: 15,
   },
 ];
