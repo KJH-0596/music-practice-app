@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { GlobalKeyboardHandler } from "@/components/GlobalKeyboardHandler";
+import { SettingsButton } from "@/components/SettingsButton";
 
 export const metadata: Metadata = {
   title: "Music Practice App",
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="ko" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-sans">
         <GlobalKeyboardHandler />
+        <SettingsButton />
         {children}
       </body>
     </html>
