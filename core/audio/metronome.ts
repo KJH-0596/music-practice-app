@@ -13,24 +13,24 @@ import type { TimeSignature } from "@/types/audio";
 type BeatCallback = (beatIndex: number) => void;
 
 let sequence: import("tone").Sequence | null = null;
-let accentSynth: import("tone").MembraneSynth | null = null;
-let normalSynth: import("tone").MembraneSynth | null = null;
+let accentSynth: import("tone").Synth | null = null;
+let normalSynth: import("tone").Synth | null = null;
 
 function initSynths(Tone: typeof import("tone")) {
   if (accentSynth && normalSynth) return;
 
-  // 강박 (1번 박): 높고 선명한 클릭
-  accentSynth = new Tone.MembraneSynth({
-    pitchDecay: 0.008,
-    octaves: 4,
-    envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 },
+  // 강박 (똑): 삼각파 고음역 → 맑고 선명한 클릭
+  accentSynth = new Tone.Synth({
+    oscillator: { type: "triangle" },
+    envelope: { attack: 0.001, decay: 0.018, sustain: 0, release: 0.01 },
+    volume: -4,
   }).toDestination();
 
-  // 약박: 낮고 부드러운 클릭
-  normalSynth = new Tone.MembraneSynth({
-    pitchDecay: 0.005,
-    octaves: 2,
-    envelope: { attack: 0.001, decay: 0.07, sustain: 0, release: 0.08 },
+  // 약박 (딱): 낮고 부드러운 클릭
+  normalSynth = new Tone.Synth({
+    oscillator: { type: "triangle" },
+    envelope: { attack: 0.001, decay: 0.013, sustain: 0, release: 0.008 },
+    volume: -10,
   }).toDestination();
 }
 
@@ -88,9 +88,10 @@ export async function startMetronome(
       const idx = beatIndex as number;
       const isAccent = idx === 0;
       const synth = isAccent ? accentSynth! : normalSynth!;
-      const note = isAccent ? "C2" : "C1";
+      // 강박: A5(880Hz) 높고 선명, 약박: E5(659Hz) 낮고 부드럽게
+      const note = isAccent ? "A5" : "E5";
 
-      synth.triggerAttackRelease(note, "32n", time);
+      synth.triggerAttackRelease(note, "64n", time);
 
       // UI 업데이트: Tone의 Draw 스케줄러로 메인 스레드에서 실행
       Tone.getDraw().schedule(() => {
