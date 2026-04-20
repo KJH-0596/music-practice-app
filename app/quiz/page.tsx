@@ -8,6 +8,9 @@ import { EdgeFlash } from "@/components/EdgeFlash";
 import { StrobeTuner } from "@/components/StrobeTuner";
 import { useTuner } from "@/hooks/useTuner";
 import { useScaleStore } from "@/store/useScaleStore";
+import { useMetronomeStore } from "@/store/useStore";
+import { startAudioEngine } from "@/core/audio/engine";
+import { startMetronome, stopMetronome, updateBpm } from "@/core/audio/metronome";
 import { SCALES } from "@/core/theory/scales";
 import { NOTE_NAMES, INSTRUMENTS, type InstrumentConfig } from "@/core/theory/constants";
 import { getScaleInfo } from "@/core/theory/scales";
@@ -31,10 +34,20 @@ export default function QuizPage() {
   const rootMidi = 60 + rootIndex;
   const { noteClasses } = getScaleInfo(rootMidi, scale.intervals);
 
+  // ── 메트로놈 store ──
+  const { bpm, timeSignature, currentBeat, setBpm, setCurrentBeat, setIsPlaying } = useMetronomeStore();
+
   // ── 로컬 UI state ──
   const [instrument, setInstrument] = useState<InstrumentConfig>(INSTRUMENTS[0]);
   const [mode, setMode] = useState<Mode>("click");
   const [fretCount, setFretCount] = useState(15);
+  const [metronomeOn, setMetronomeOn] = useState(false);
+
+  // 모드 전환 effect에서 stale closure 방지용 ref
+  const metronomeOnRef = useRef(false);
+  useEffect(() => {
+    metronomeOnRef.current = metronomeOn;
+  }, [metronomeOn]);
 
   // ── 퀴즈 마킹 state ──
   const [correctMarks, setCorrectMarks] = useState<QuizMark[]>([]);
@@ -73,31 +86,66 @@ export default function QuizPage() {
     lastNoteClassRef.current = -1;
   }, [rootIndex, scaleId, instrument.id]);
 
-  // ── 모드 전환 시 마이크 자동 시작/정지 ──
+  // ── 모드 전환: 마이크 + 메트로놈 자동 시작/정지 ──
   useEffect(() => {
     if (mode === "guitar") {
       start();
     } else {
       stop();
       lastNoteClassRef.current = -1;
+      // 기타 모드를 벗어나면 메트로놈도 정지
+      if (metronomeOnRef.current) {
+        stopMetronome();
+        setMetronomeOn(false);
+        setIsPlaying(false);
+        setCurrentBeat(-1);
+      }
     }
-  }, [mode, start, stop]);
+  }, [mode, start, stop, setIsPlaying, setCurrentBeat]);
+
+  // ── 언마운트 시 메트로놈 정리 ──
+  useEffect(() => {
+    return () => {
+      stopMetronome();
+    };
+  }, []);
+
+  // ── 메트로놈 토글 ──
+  const toggleMetronome = useCallback(async () => {
+    if (metronomeOn) {
+      stopMetronome();
+      setMetronomeOn(false);
+      setIsPlaying(false);
+      setCurrentBeat(-1);
+    } else {
+      await startAudioEngine();
+      setMetronomeOn(true);
+      setIsPlaying(true);
+      await startMetronome(bpm, timeSignature, (beatIdx) => {
+        setCurrentBeat(beatIdx);
+      });
+    }
+  }, [metronomeOn, bpm, timeSignature, setIsPlaying, setCurrentBeat]);
+
+  // ── BPM 변경 ──
+  const handleBpmChange = useCallback((newBpm: number) => {
+    const clamped = Math.max(40, Math.min(240, newBpm));
+    setBpm(clamped);
+    updateBpm(clamped);
+  }, [setBpm]);
 
   // ── 기타 연주 모드: 피치 감지 → 스케일 판정 ──
   useEffect(() => {
     if (mode !== "guitar") return;
 
     if (!pitch) {
-      // 무음 → 동일 음 재트리거 허용 (다시 소리가 나면 새로 판정)
       lastNoteClassRef.current = -1;
       return;
     }
 
-    // MIDI 음번호 → 음정 클래스 (0~11)
     const midiRound = Math.round(12 * Math.log2(pitch.frequency / 440) + 69);
     const noteClass = ((midiRound % 12) + 12) % 12;
 
-    // 동일 음정 클래스는 중복 트리거 방지
     if (noteClass === lastNoteClassRef.current) return;
     lastNoteClassRef.current = noteClass;
 
@@ -128,11 +176,9 @@ export default function QuizPage() {
       } else {
         setWrongMarks((prev) => [...prev, { string: stringIdx, fret, id }]);
         setScore((s) => ({ ...s, wrong: s.wrong + 1 }));
-        // 1.2초 후 dying 상태 → opacity 0 트랜지션 시작
         setTimeout(() => {
           setWrongMarks((prev) => prev.map((m) => m.id === id ? { ...m, dying: true } : m));
         }, 1200);
-        // 1.7초 후 DOM에서 제거 (0.5초 fade 완료 후)
         setTimeout(() => {
           setWrongMarks((prev) => prev.filter((m) => m.id !== id));
         }, 1700);
@@ -149,7 +195,6 @@ export default function QuizPage() {
     lastNoteClassRef.current = -1;
   };
 
-  // 랜덤 스케일 + 루트 선택
   const handleRandom = useCallback(() => {
     const newRoot = Math.floor(Math.random() * 12);
     const newScale = SCALES[Math.floor(Math.random() * SCALES.length)];
@@ -199,7 +244,6 @@ export default function QuizPage() {
           Training
         </h1>
         <div className="flex items-center gap-2">
-          {/* 랜덤 버튼 */}
           <button
             onClick={handleRandom}
             title="랜덤 스케일"
@@ -212,7 +256,6 @@ export default function QuizPage() {
               <path d="M5 12l-2.5-2L5 8" />
             </svg>
           </button>
-          {/* 스케일 이름 (클릭 시 Scale Guide로 이동) */}
           <Link
             href="/scales"
             className="flex items-center gap-1.5 text-sm text-amber-400 hover:text-amber-300 transition-colors"
@@ -259,7 +302,6 @@ export default function QuizPage() {
           </button>
         </div>
 
-        {/* 악기 선택 (클릭 모드에서만 의미 있음) */}
         {mode === "click" && (
           <div className="flex gap-1.5 flex-wrap">
             {INSTRUMENTS.map((inst) => (
@@ -301,16 +343,13 @@ export default function QuizPage() {
         </div>
       )}
 
-      {/* ── 기타 연주 모드: 튜너 + 커버리지 ── */}
+      {/* ── 기타 연주 모드: 튜너 + 메트로놈 + 커버리지 ── */}
       {mode === "guitar" && (
-        <div className="px-6 flex flex-col items-center gap-10 py-4">
+        <div className="px-6 flex flex-col items-center gap-8 py-4">
 
-          {/* 마이크 오류 안내 */}
           {tunerState === "error" && errorMessage && (
             <p className="text-red-400/80 text-sm text-center max-w-sm">{errorMessage}</p>
           )}
-
-          {/* 마이크 대기 중 */}
           {tunerState === "idle" && !errorMessage && (
             <p className="text-neutral-700 text-xs tracking-widest animate-pulse">마이크 준비 중…</p>
           )}
@@ -318,12 +357,74 @@ export default function QuizPage() {
           {/* StrobeTuner */}
           <StrobeTuner pitch={pitch} isListening={tunerState === "listening"} />
 
-          {/* 주파수 표시 */}
           {pitch && (
-            <p className="text-[11px] text-neutral-700 font-mono -mt-6">
+            <p className="text-[11px] text-neutral-700 font-mono -mt-4">
               {pitch.note}{pitch.octave} · {pitch.frequency} Hz
             </p>
           )}
+
+          {/* ── 메트로놈 섹션 ── */}
+          <div className="flex flex-col items-center gap-3 w-full max-w-sm">
+
+            {/* 비트 인디케이터 */}
+            <div className="flex items-center gap-2 h-6">
+              {Array.from({ length: timeSignature.beats }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`rounded-full transition-all duration-75 ${
+                    metronomeOn && currentBeat === i
+                      ? i === 0
+                        ? "w-4 h-4 bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.8)]"
+                        : "w-3 h-3 bg-amber-400/60"
+                      : i === 0
+                        ? "w-4 h-4 bg-neutral-800"
+                        : "w-3 h-3 bg-neutral-800"
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* BPM 조절 + 토글 */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleBpmChange(bpm - 5)}
+                className="w-7 h-7 rounded-lg text-xs text-neutral-600 hover:text-neutral-300 bg-neutral-900 border border-neutral-800 transition-colors"
+              >
+                -5
+              </button>
+              <button
+                onClick={() => handleBpmChange(bpm - 1)}
+                className="w-7 h-7 rounded-lg text-xs text-neutral-600 hover:text-neutral-300 bg-neutral-900 border border-neutral-800 transition-colors"
+              >
+                -
+              </button>
+              <span className="text-sm font-mono text-neutral-300 w-16 text-center tabular-nums">
+                {bpm} BPM
+              </span>
+              <button
+                onClick={() => handleBpmChange(bpm + 1)}
+                className="w-7 h-7 rounded-lg text-xs text-neutral-600 hover:text-neutral-300 bg-neutral-900 border border-neutral-800 transition-colors"
+              >
+                +
+              </button>
+              <button
+                onClick={() => handleBpmChange(bpm + 5)}
+                className="w-7 h-7 rounded-lg text-xs text-neutral-600 hover:text-neutral-300 bg-neutral-900 border border-neutral-800 transition-colors"
+              >
+                +5
+              </button>
+              <button
+                onClick={toggleMetronome}
+                className={`px-3 h-7 rounded-lg text-xs transition-all duration-150 ${
+                  metronomeOn
+                    ? "bg-amber-400/15 text-amber-400 border border-amber-400/40"
+                    : "bg-neutral-900 text-neutral-600 hover:text-neutral-400 border border-neutral-800"
+                }`}
+              >
+                {metronomeOn ? "ON" : "OFF"}
+              </button>
+            </div>
+          </div>
 
           {/* Scale Coverage */}
           <div className="flex flex-col items-center gap-3 w-full max-w-sm">
@@ -336,7 +437,6 @@ export default function QuizPage() {
               </span>
             </div>
 
-            {/* 커버리지 바 */}
             <div className="w-full h-1 bg-neutral-900 rounded-full overflow-hidden">
               <div
                 className="h-full bg-amber-400/60 rounded-full transition-all duration-500"
@@ -344,7 +444,6 @@ export default function QuizPage() {
               />
             </div>
 
-            {/* 스케일 음 도트 */}
             <div className="flex gap-2 flex-wrap justify-center mt-1">
               {scale.intervals.map((interval, i) => {
                 const nc = (rootMidi + interval) % 12;
