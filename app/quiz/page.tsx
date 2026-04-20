@@ -11,6 +11,7 @@ import { useScaleStore } from "@/store/useScaleStore";
 import { useMetronomeStore } from "@/store/useStore";
 import { startAudioEngine } from "@/core/audio/engine";
 import { startMetronome, stopMetronome, updateBpm } from "@/core/audio/metronome";
+import { SubdivisionSelector } from "@/components/SubdivisionSelector";
 import { SCALES } from "@/core/theory/scales";
 import { NOTE_NAMES, INSTRUMENTS, type InstrumentConfig } from "@/core/theory/constants";
 import { getScaleInfo } from "@/core/theory/scales";
@@ -35,7 +36,7 @@ export default function QuizPage() {
   const { noteClasses } = getScaleInfo(rootMidi, scale.intervals);
 
   // ── 메트로놈 store ──
-  const { bpm, timeSignature, currentBeat, setBpm, setCurrentBeat, setIsPlaying } = useMetronomeStore();
+  const { bpm, timeSignature, subdivision, currentBeat, setBpm, setCurrentBeat, setIsPlaying, setSubdivision } = useMetronomeStore();
 
   // ── 로컬 UI state ──
   const [instrument, setInstrument] = useState<InstrumentConfig>(INSTRUMENTS[0]);
@@ -121,7 +122,7 @@ export default function QuizPage() {
       await startAudioEngine();
       setMetronomeOn(true);
       setIsPlaying(true);
-      await startMetronome(bpm, timeSignature, (beatIdx) => {
+      await startMetronome(bpm, timeSignature, subdivision, (beatIdx) => {
         setCurrentBeat(beatIdx);
       });
     }
@@ -383,6 +384,20 @@ export default function QuizPage() {
                 />
               ))}
             </div>
+
+            {/* 서브디비전 선택 */}
+            <SubdivisionSelector
+              value={subdivision}
+              onChange={async (s) => {
+                setSubdivision(s);
+                if (metronomeOn) {
+                  stopMetronome();
+                  await startMetronome(bpm, timeSignature, s, (beatIdx) => {
+                    setCurrentBeat(beatIdx);
+                  });
+                }
+              }}
+            />
 
             {/* BPM 조절 + 토글 */}
             <div className="flex items-center gap-2">

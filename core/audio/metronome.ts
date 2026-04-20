@@ -2,22 +2,23 @@
  * 메트로놈 핵심 로직
  * Tone.js Transport + Sequence로 정확한 타이밍 보장
  *
- * 핵심 설계:
- * - Tone 모듈은 engine.ts에서 캐싱 후 공유 → stopMetronome 완전 동기화
- * - startMetronome에서 stop → 새 시퀀스 시작 순서를 안전하게 보장
+ * 서브디비전 설계:
+ * - 단일 Sequence를 서브디비전 간격으로 실행
+ * - tickIndex % ticksPerBeat === 0 이면 메인 비트, 아니면 서브 클릭
  */
 
 import { getTone } from "./engine";
-import type { TimeSignature } from "@/types/audio";
+import type { TimeSignature, SubdivisionType } from "@/types/audio";
 
 type BeatCallback = (beatIndex: number) => void;
 
 let sequence: import("tone").Sequence | null = null;
 let accentSynth: import("tone").Synth | null = null;
-let normalSynth: import("tone").Synth | null = null;
+let normalSynth:  import("tone").Synth | null = null;
+let subSynth:     import("tone").Synth | null = null;
 
 function initSynths(Tone: typeof import("tone")) {
-  if (accentSynth && normalSynth) return;
+  if (accentSynth && normalSynth && subSynth) return;
 
   // 강박 (똑): 삼각파 고음역 → 맑고 선명한 클릭
   accentSynth = new Tone.Synth({
@@ -32,11 +33,38 @@ function initSynths(Tone: typeof import("tone")) {
     envelope: { attack: 0.001, decay: 0.013, sustain: 0, release: 0.008 },
     volume: -10,
   }).toDestination();
+
+  // 서브디비전: 더 작고 높은 클릭
+  subSynth = new Tone.Synth({
+    oscillator: { type: "triangle" },
+    envelope: { attack: 0.001, decay: 0.008, sustain: 0, release: 0.005 },
+    volume: -20,
+  }).toDestination();
+}
+
+/**
+ * 서브디비전 타입 → Tone.js 간격 문자열 + 비트당 틱 수
+ * division: TimeSignature.division (4 = 4분음표 기준, 8 = 8분음표 기준)
+ */
+function getSubdivisionConfig(
+  division: number,
+  subdivision: SubdivisionType
+): { interval: string; ticksPerBeat: number } {
+  switch (subdivision) {
+    case "quarter":
+      return { interval: `${division}n`,     ticksPerBeat: 1 };
+    case "eighth":
+      return { interval: `${division * 2}n`, ticksPerBeat: 2 };
+    case "sixteenth":
+      return { interval: `${division * 4}n`, ticksPerBeat: 4 };
+    case "triplet":
+      // division * 2 번째 음표의 3연음: ex) 4/4 → "8t"
+      return { interval: `${division * 2}t`, ticksPerBeat: 3 };
+  }
 }
 
 /**
  * 메트로놈 정지 — 완전 동기 실행
- * engine.ts에서 캐싱된 Tone 모듈을 사용하므로 동기 호출 안전
  */
 export function stopMetronome(): void {
   if (sequence) {
@@ -48,61 +76,60 @@ export function stopMetronome(): void {
   const Tone = getTone();
   if (Tone) {
     Tone.getTransport().stop();
-    // 예약된 모든 이벤트 제거 (이전 시퀀스 잔재 제거)
     Tone.getTransport().cancel();
   }
 }
 
 /**
  * 메트로놈 시작
- * stopMetronome()이 동기이므로 await 없이도 순서 보장
  */
 export async function startMetronome(
   bpm: number,
   timeSignature: TimeSignature,
+  subdivision: SubdivisionType,
   onBeat: BeatCallback
 ): Promise<void> {
-  // engine.ts의 startAudioEngine()이 먼저 호출되어 있으므로
-  // 여기서는 캐싱된 모듈을 가져옴
   const Tone = await import("tone");
 
-  // 1. 기존 시퀀스/Transport 완전 정지 (동기)
   stopMetronome();
-
-  // 2. 신디사이저 초기화
   initSynths(Tone);
 
-  // 3. BPM 설정
   Tone.getTransport().bpm.value = bpm;
 
-  // 4. 박자 배열 생성 (0-based index)
-  const beats = Array.from({ length: timeSignature.beats }, (_, i) => i);
+  const { interval, ticksPerBeat } = getSubdivisionConfig(
+    timeSignature.division,
+    subdivision
+  );
 
-  // 5. 시퀀스 생성
-  // 6/8박자: 8분음표(8n) 간격으로 6박
-  // 4/4박자: 4분음표(4n) 간격으로 4박
-  const interval = `${timeSignature.division}n`;
+  // 전체 틱 수: 박자 수 × 비트당 틱
+  const totalTicks = timeSignature.beats * ticksPerBeat;
+  const ticks = Array.from({ length: totalTicks }, (_, i) => i);
 
   sequence = new Tone.Sequence(
-    (time, beatIndex) => {
-      const idx = beatIndex as number;
-      const isAccent = idx === 0;
-      const synth = isAccent ? accentSynth! : normalSynth!;
-      // 강박: A5(880Hz) 높고 선명, 약박: E5(659Hz) 낮고 부드럽게
-      const note = isAccent ? "A5" : "E5";
+    (time, tickIndex) => {
+      const idx = tickIndex as number;
+      const beatIndex = Math.floor(idx / ticksPerBeat);
+      const subIndex  = idx % ticksPerBeat;
+      const isMainBeat = subIndex === 0;
+      const isAccent   = beatIndex === 0;
 
-      synth.triggerAttackRelease(note, "64n", time);
+      if (isMainBeat) {
+        const synth = isAccent ? accentSynth! : normalSynth!;
+        const note  = isAccent ? "A5" : "E5";
+        synth.triggerAttackRelease(note, "64n", time);
 
-      // UI 업데이트: Tone의 Draw 스케줄러로 메인 스레드에서 실행
-      Tone.getDraw().schedule(() => {
-        onBeat(idx);
-      }, time);
+        Tone.getDraw().schedule(() => {
+          onBeat(beatIndex);
+        }, time);
+      } else {
+        // 서브디비전 클릭
+        subSynth!.triggerAttackRelease("B5", "64n", time);
+      }
     },
-    beats,
+    ticks,
     interval
   );
 
-  // 6. 시작 (position 0부터)
   sequence.start(0);
   Tone.getTransport().start();
 }
