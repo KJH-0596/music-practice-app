@@ -2,18 +2,37 @@
 
 import Link from "next/link";
 import { FEATURES, type FeatureConfig } from "@/config/features";
+import { version } from "@/package.json";
 
 // 아이콘은 JSX라 config에 넣기 어려우므로 href 기준으로 여기서 매핑
 const ICONS: Record<string, React.ReactNode> = {
   "/metronome": (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 28 28"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M14 24V10M14 10L9 20M14 10l5 10" />
       <path d="M8 24h16" />
       <circle cx="14" cy="7" r="2.5" />
     </svg>
   ),
   "/tuner": (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 28 28"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <circle cx="14" cy="16" r="7" />
       <path d="M14 9V5" />
       <path d="M10 5h8" />
@@ -21,7 +40,16 @@ const ICONS: Record<string, React.ReactNode> = {
     </svg>
   ),
   "/scales": (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 28 28"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="3" y="8" width="22" height="12" rx="2" />
       <line x1="3" y1="14" x2="25" y2="14" />
       <line x1="9" y1="8" x2="9" y2="20" />
@@ -34,7 +62,16 @@ const ICONS: Record<string, React.ReactNode> = {
     </svg>
   ),
   "/quiz": (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 28 28"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="3" y="8" width="22" height="12" rx="2" />
       <line x1="3" y1="14" x2="25" y2="14" />
       <line x1="9" y1="8" x2="9" y2="20" />
@@ -58,7 +95,7 @@ export default function HomePage() {
           기타 스케일 연습 앱
         </h1>
         <p className="text-xs tracking-widest text-amber-400/60 uppercase font-medium mt-2">
-          DEMO
+          v{version}
         </p>
       </div>
 
@@ -75,14 +112,31 @@ export default function HomePage() {
       {/* 키보드 단축키 힌트 */}
       {FEATURES.length > 1 && (
         <p className="mt-12 text-xs text-neutral-700">
-          기능 페이지에서 <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-500 font-mono">Ctrl</kbd> + <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-500 font-mono">←</kbd><kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-500 font-mono">→</kbd> 로 기능 간 이동
+          기능 페이지에서{" "}
+          <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-500 font-mono">
+            Ctrl
+          </kbd>{" "}
+          +{" "}
+          <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-500 font-mono">
+            ←
+          </kbd>
+          <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-500 font-mono">
+            →
+          </kbd>{" "}
+          로 기능 간 이동
         </p>
       )}
     </main>
   );
 }
 
-function FeatureCard({ feature, icon }: { feature: FeatureConfig; icon: React.ReactNode }) {
+function FeatureCard({
+  feature,
+  icon,
+}: {
+  feature: FeatureConfig;
+  icon: React.ReactNode;
+}) {
   return (
     <Link
       href={feature.href}
@@ -97,11 +151,21 @@ function FeatureCard({ feature, icon }: { feature: FeatureConfig; icon: React.Re
         {icon}
       </div>
       <div>
-        <h2 className="text-white font-medium text-base mb-1">{feature.title}</h2>
+        <h2 className="text-white font-medium text-base mb-1">
+          {feature.title}
+        </h2>
         <p className="text-neutral-500 text-sm">{feature.description}</p>
       </div>
       <div className="absolute right-5 top-1/2 -translate-y-1/2 text-neutral-700 group-hover:text-amber-400 group-hover:translate-x-1 transition-all duration-200">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        >
           <path d="M3 8h10M9 4l4 4-4 4" />
         </svg>
       </div>
