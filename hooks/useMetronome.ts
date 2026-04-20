@@ -13,13 +13,29 @@ export function useMetronome() {
   const {
     bpm,
     timeSignature,
+    subdivision,
     isPlaying,
     currentBeat,
     setBpm,
     setTimeSignature,
+    setSubdivision,
     setIsPlaying,
     setCurrentBeat,
   } = useMetronomeStore();
+
+  // 서브디비전 변경 (재생 중이면 재시작)
+  const changeSubdivision = useCallback(
+    async (s: typeof subdivision) => {
+      setSubdivision(s);
+      if (isPlaying) {
+        stopMetronome();
+        await startMetronome(bpm, timeSignature, s, (beatIndex) => {
+          setCurrentBeat(beatIndex);
+        });
+      }
+    },
+    [isPlaying, bpm, timeSignature, setSubdivision, setCurrentBeat]
+  );
 
   // Tap Tempo 계산을 위한 탭 히스토리
   const tapTimesRef = useRef<number[]>([]);
@@ -36,7 +52,7 @@ export function useMetronome() {
       setCurrentBeat(-1);
     } else {
       setIsPlaying(true);
-      await startMetronome(bpm, timeSignature, (beatIndex) => {
+      await startMetronome(bpm, timeSignature, subdivision, (beatIndex) => {
         setCurrentBeat(beatIndex);
       });
     }
@@ -58,8 +74,8 @@ export function useMetronome() {
     async (ts: typeof timeSignature) => {
       setTimeSignature(ts);
       if (isPlaying) {
-        stopMetronome(); // 동기 정지
-        await startMetronome(bpm, ts, (beatIndex) => {
+        stopMetronome();
+        await startMetronome(bpm, ts, subdivision, (beatIndex) => {
           setCurrentBeat(beatIndex);
         });
       }
@@ -126,11 +142,13 @@ export function useMetronome() {
   return {
     bpm,
     timeSignature,
+    subdivision,
     isPlaying,
     currentBeat,
     toggle,
     changeBpm,
     changeTimeSignature,
+    changeSubdivision,
     tap,
   };
 }

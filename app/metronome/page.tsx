@@ -7,16 +7,19 @@ import { BpmControl } from "@/components/BpmControl";
 import { TimeSignatureSelector } from "@/components/TimeSignatureSelector";
 import { BeatIndicator } from "@/components/BeatIndicator";
 import { TransportControl } from "@/components/TransportControl";
+import { SubdivisionSelector } from "@/components/SubdivisionSelector";
 
 export default function MetronomePage() {
   const {
     bpm,
     timeSignature,
+    subdivision,
     isPlaying,
     currentBeat,
     toggle,
     changeBpm,
     changeTimeSignature,
+    changeSubdivision,
     tap,
   } = useMetronome();
 
@@ -50,6 +53,10 @@ export default function MetronomePage() {
           <TimeSignatureSelector
             value={timeSignature}
             onChange={changeTimeSignature}
+          />
+          <SubdivisionSelector
+            value={subdivision}
+            onChange={changeSubdivision}
           />
           <TransportControl
             isPlaying={isPlaying}
