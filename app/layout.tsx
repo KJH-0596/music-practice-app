@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { GlobalKeyboardHandler } from "@/components/GlobalKeyboardHandler";
 import { SettingsButton } from "@/components/SettingsButton";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Music Practice App",
@@ -19,6 +20,7 @@ export default function RootLayout({
         <GlobalKeyboardHandler />
         <SettingsButton />
         {children}
+        <Analytics />
       </body>
     </html>
   );
