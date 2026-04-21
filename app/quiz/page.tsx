@@ -188,13 +188,13 @@ export default function QuizPage() {
     [noteClasses]
   );
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setCorrectMarks([]);
     setWrongMarks([]);
     setScore({ correct: 0, wrong: 0 });
     setCoverage(new Set());
     lastNoteClassRef.current = -1;
-  };
+  }, []);
 
   const handleRandom = useCallback(() => {
     const newRoot = Math.floor(Math.random() * 12);
@@ -202,6 +202,33 @@ export default function QuizPage() {
     setRootIndex(newRoot);
     setScaleId(newScale.id);
   }, [setRootIndex, setScaleId]);
+
+  // ── 키보드 단축키 ──
+  // 클릭 모드: Space → 랜덤
+  // 기타 연주 모드: Space → 메트로놈 토글, Esc → 초기화
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        if (mode === "guitar") {
+          // 기타 모드: target 체크 전에 preventDefault → 포커스된 버튼 활성화 차단
+          e.preventDefault();
+          toggleMetronome();
+          return;
+        }
+        if (mode === "click") {
+          e.preventDefault();
+          handleRandom();
+        }
+      }
+
+      if (e.code === "Escape" && mode === "guitar") {
+        handleReset();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mode, handleRandom, toggleMetronome, handleReset]);
 
   const hasScale = !!scale;
 
@@ -493,12 +520,27 @@ export default function QuizPage() {
         </div>
       )}
 
-      {/* 안내 문구 */}
-      <div className="px-6 pt-4 pb-6 max-w-5xl w-full mx-auto">
+      {/* 안내 문구 + 단축키 힌트 */}
+      <div className="px-6 pt-4 pb-6 max-w-5xl w-full mx-auto flex flex-col items-center gap-2">
         <p className="text-xs text-neutral-700 text-center">
           {mode === "click"
             ? `${NOTE_NAMES[rootIndex]} ${scale.name} 스케일에 속하는 음을 지판에서 클릭하세요`
             : `기타를 연주하면 음을 감지해 ${NOTE_NAMES[rootIndex]} ${scale.name} 스케일 여부를 판정합니다`}
+        </p>
+        <p className="text-[10px] text-neutral-800 text-center">
+          {mode === "click" ? (
+            <>
+              <kbd className="px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-700 font-mono">Space</kbd>
+              {" "}랜덤 스케일
+            </>
+          ) : (
+            <>
+              <kbd className="px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-700 font-mono">Space</kbd>
+              {" "}메트로놈 &nbsp;
+              <kbd className="px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-700 font-mono">Esc</kbd>
+              {" "}초기화
+            </>
+          )}
         </p>
       </div>
     </main>
