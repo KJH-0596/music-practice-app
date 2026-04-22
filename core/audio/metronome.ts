@@ -12,34 +12,52 @@ import type { TimeSignature, SubdivisionType } from "@/types/audio";
 
 type BeatCallback = (beatIndex: number) => void;
 
-let sequence: import("tone").Sequence | null = null;
-let accentSynth: import("tone").Synth | null = null;
-let normalSynth:  import("tone").Synth | null = null;
-let subSynth:     import("tone").Synth | null = null;
+let sequence:     import("tone").Sequence | null = null;
+let accentSynth:  import("tone").Synth   | null = null;
+let normalSynth:  import("tone").Synth   | null = null;
+let subSynth:     import("tone").Synth   | null = null;
+let masterVolume: import("tone").Volume  | null = null;
+
+// initSynths 실행 전에 슬라이더가 움직인 경우를 위한 pending 값
+let _pendingVolumeDb = 0;
+
+/**
+ * 메트로놈 마스터 볼륨 실시간 변경 (재시작 없이)
+ * @param db  -10 ~ +10 dB
+ */
+export function setMetronomeVolume(db: number): void {
+  _pendingVolumeDb = Math.max(-10, Math.min(10, db));
+  if (masterVolume) {
+    masterVolume.volume.value = _pendingVolumeDb;
+  }
+}
 
 function initSynths(Tone: typeof import("tone")) {
   if (accentSynth && normalSynth && subSynth) return;
+
+  // 마스터 볼륨 노드: accentSynth/normalSynth/subSynth → masterVolume → destination
+  masterVolume = new Tone.Volume(_pendingVolumeDb).toDestination();
 
   // 강박 (똑): 삼각파 고음역 → 맑고 선명한 클릭
   accentSynth = new Tone.Synth({
     oscillator: { type: "triangle" },
     envelope: { attack: 0.001, decay: 0.018, sustain: 0, release: 0.01 },
     volume: -4,
-  }).toDestination();
+  }).connect(masterVolume);
 
   // 약박 (딱): 낮고 부드러운 클릭
   normalSynth = new Tone.Synth({
     oscillator: { type: "triangle" },
     envelope: { attack: 0.001, decay: 0.013, sustain: 0, release: 0.008 },
     volume: -10,
-  }).toDestination();
+  }).connect(masterVolume);
 
   // 서브디비전: 더 작고 높은 클릭
   subSynth = new Tone.Synth({
     oscillator: { type: "triangle" },
     envelope: { attack: 0.001, decay: 0.008, sustain: 0, release: 0.005 },
     volume: -20,
-  }).toDestination();
+  }).connect(masterVolume);
 }
 
 /**
