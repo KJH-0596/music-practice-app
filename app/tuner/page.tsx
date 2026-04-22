@@ -18,6 +18,18 @@ export default function TunerPage() {
 
   const isListening = state === "listening";
 
+  // 키보드 단축키: Space → 시작/정지
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      // target 체크 전에 preventDefault → 포커스된 버튼 활성화 차단
+      e.preventDefault();
+      isListening ? stop() : start();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isListening, start, stop]);
+
   return (
     <main className="min-h-screen bg-neutral-950 flex flex-col">
       {/* 상단 네비게이션 */}
@@ -92,6 +104,12 @@ export default function TunerPage() {
               </p>
             )
           )}
+
+          {/* 단축키 힌트 */}
+          <p className="text-[10px] text-neutral-800 text-center">
+            <kbd className="px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-700 font-mono">Space</kbd>
+            {" "}시작 / 정지
+          </p>
 
         </div>
       </div>

@@ -2,13 +2,24 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { setMetronomeVolume } from "@/core/audio/metronome";
 
 export function SettingsButton() {
   const [open, setOpen] = useState(false);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [permissionNeeded, setPermissionNeeded] = useState(false);
 
-  const { audioDeviceId, setAudioDeviceId, inputGain, setInputGain } = useSettingsStore();
+  const {
+    audioDeviceId, setAudioDeviceId,
+    inputGain, setInputGain,
+    metronomeVolume, setMetronomeVolume: storeSetMetronomeVolume,
+  } = useSettingsStore();
+
+  // 저장된 볼륨을 Tone 엔진에 적용 (페이지 로드 시)
+  useEffect(() => {
+    setMetronomeVolume(metronomeVolume);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 오디오 입력 장치 목록 갱신
   const refreshDevices = useCallback(async () => {
@@ -171,6 +182,36 @@ export function SettingsButton() {
                     현재: {displayLabel}
                   </p>
                 )}
+              </div>
+
+              {/* 메트로놈 볼륨 */}
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] tracking-widest text-neutral-600 uppercase font-medium">
+                    메트로놈 볼륨
+                  </label>
+                  <span className="text-xs font-mono text-neutral-500">
+                    {metronomeVolume > 0 ? `+${metronomeVolume}` : metronomeVolume} dB
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={-10}
+                  max={10}
+                  step={1}
+                  value={metronomeVolume}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    storeSetMetronomeVolume(v);
+                    setMetronomeVolume(v);
+                  }}
+                  className="w-full accent-amber-400"
+                />
+                <div className="flex justify-between text-[10px] text-neutral-700">
+                  <span>-10 dB</span>
+                  <span>0 dB</span>
+                  <span>+10 dB</span>
+                </div>
               </div>
 
               {/* 입력 게인 */}
