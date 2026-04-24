@@ -11,6 +11,7 @@ export function SettingsButton() {
 
   const {
     audioDeviceId, setAudioDeviceId,
+    inputChannel, setInputChannel,
     inputGain, setInputGain,
     metronomeVolume, setMetronomeVolume: storeSetMetronomeVolume,
   } = useSettingsStore();
@@ -182,6 +183,31 @@ export function SettingsButton() {
                     현재: {displayLabel}
                   </p>
                 )}
+              </div>
+
+              {/* 입력 채널 */}
+              <div className="flex flex-col gap-2.5">
+                <label className="text-[10px] tracking-widest text-neutral-600 uppercase font-medium">
+                  입력 채널
+                </label>
+                <div className="flex gap-1.5">
+                  {[0, 1, 2, 3].map((ch) => (
+                    <button
+                      key={ch}
+                      onClick={() => setInputChannel(ch)}
+                      className={`flex-1 h-8 rounded-lg text-xs transition-all duration-150 ${
+                        inputChannel === ch
+                          ? "bg-amber-400/15 text-amber-400 border border-amber-400/40"
+                          : "bg-neutral-800 text-neutral-500 hover:text-neutral-300 border border-transparent"
+                      }`}
+                    >
+                      CH {ch + 1}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-neutral-700 leading-relaxed">
+                  악기가 연결된 채널을 선택하세요.
+                </p>
               </div>
 
               {/* 메트로놈 볼륨 */}
